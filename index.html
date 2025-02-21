@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bbang-lang 컴파일러</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            background-color: #252526;
+            color: #ffffff;
+            border: 1px solid #555;
+            padding: 10px;
+            font-size: 16px;
+            resize: none;
+            outline: none;
+        }
+        button {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #005f99;
+        }
+        .output {
+            background-color: #252526;
+            color: #ffffff;
+            padding: 10px;
+            margin-top: 10px;
+            min-height: 50px;
+            border: 1px solid #555;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>bbang-lang 컴파일러</h1>
+        <textarea id="codeInput" placeholder="여기에 빠아앙 코드를 입력하세요..."></textarea>
+        <br>
+        <button onclick="runCode()">실행</button>
+        <div class="output" id="output"></div>
+    </div>
+
+    <script>
+        let val = [];
+
+        function cn(expression) {
+            expression = expression.replace(/\s/g, "");
+            let precedence = {"+": 2, "-": 2, "*": 1, "/": 1};
+            let operatorStack = [];
+            let operandStack = [];
+            let tokens = [];
+            let token = "";
+
+            for (let i = 0; i < expression.length; i++) {
+                let char = expression[i];
+                if (!isNaN(char) || (char === '-' && (i === 0 || "+-*/".includes(expression[i - 1])))) {
+                    token += char;
+                } else {
+                    if (token) tokens.push(token);
+                    token = "";
+                    tokens.push(char);
+                }
+            }
+            if (token) tokens.push(token);
+
+            for (let token of tokens) {
+                if (!isNaN(token)) {
+                    operandStack.push(parseInt(token));
+                } else if ("+-*/".includes(token)) {
+                    while (operatorStack.length && precedence[token] <= precedence[operatorStack[operatorStack.length - 1]]) {
+                        let operator = operatorStack.pop();
+                        if (operandStack.length >= 2) {
+                            let operand2 = operandStack.pop();
+                            let operand1 = operandStack.pop();
+                            let result = 0;
+                            if (operator === "+") result = operand1 + operand2;
+                            if (operator === "-") result = operand1 - operand2;
+                            if (operator === "*") result = operand1 * operand2;
+                            if (operator === "/") result = operand2 !== 0 ? operand1 / operand2 : Infinity;
+                            operandStack.push(result);
+                        }
+                    }
+                    operatorStack.push(token);
+                }
+            }
+
+            while (operatorStack.length) {
+                let operator = operatorStack.pop();
+                if (operandStack.length >= 2) {
+                    let operand2 = operandStack.pop();
+                    let operand1 = operandStack.pop();
+                    let result = 0;
+                    if (operator === "+") result = operand1 + operand2;
+                    if (operator === "-") result = operand1 - operand2;
+                    if (operator === "*") result = operand1 * operand2;
+                    if (operator === "/") result = operand2 !== 0 ? operand1 / operand2 : Infinity;
+                    operandStack.push(result);
+                }
+            }
+
+            return operandStack.length ? operandStack[0] : null;
+        }
+
+        function runCode() {
+            let code = document.getElementById("codeInput").value;
+            let lines = code.split("\n");
+            let output = "";
+            let end = "\n";
+            let al = "";
+            let expressionOutput = "";
+
+            for (let line of lines) {
+                line = line.replace("빵", "");
+                al = "";
+                
+                if (line.startsWith("빠")) {
+                    let hcount = (line.match(/아/g) || []).length;
+                    if (line[hcount + 1] === "앙") {
+                        if (line.slice(hcount + 2).startsWith("당떨어져서그래~")) {
+                            let ins2 = line.slice(hcount + 10);
+                            for (let i of ins2) {
+                                if (i === "*") al += !al ? "+1" : (al.endsWith("/") || al.endsWith("*")) ? "1" : "+1";
+                                else if (i === "&") al += !al ? "-1" : (al.endsWith("/") || al.endsWith("*")) ? "-1" : "-1";
+                                else if (i === "@") al += "*";
+                                else if (i === "!") al += "/";
+                                else if (i === "^") al += "+";
+                                else if (i === "#") al += "-";
+                                else if (i === "ㅋ") al += val[(i.match(/ㅋ/g) || []).length];
+                            }
+                            val[hcount] = cn(al.slice(1));
+                            expressionOutput += `${val[hcount]}\n`;
+                            continue;
+                        }
+                    }
+                    for (let i of line) {
+                        if (line.includes("배고파~")) {
+                            let inp = parseInt(prompt("값 입력:"));
+                            al += inp;
+                            break;
+                        }
+                        if (i === "*") al += !al ? "+1" : (al.endsWith("/") || al.endsWith("*")) ? "1" : "+1";
+                        else if (i === "&") al += !al ? "-1" : (al.endsWith("/") || al.endsWith("*")) ? "-1" : "-1";
+                        else if (i === "@") al += "*";
+                        else if (i === "!") al += "/";
+                        else if (i === "^") al += "+";
+                        else if (i === "#") al += "-";
+                        else if (i === "ㅋ") al += val[(i.match(/ㅋ/g) || []).length];
+                    }
+                    
+                    val[hcount] = cn(al);
+                } else if (line.startsWith("교주~")) {
+                    let ins = line.slice(2);
+                    if (ins.includes("ㅋ")) {
+                        let hcount2 = (ins.match(/ㅋ/g) || []).length;
+                        output += `${val[hcount2]}${end}`;
+                    } else {
+                        let al1 = "";
+                        for (let i of ins) {
+                            if (i === "*") al1 += !al1 ? "+1" : (al1.endsWith("/") || al1.endsWith("*")) ? "1" : "+1";
+                            else if (i === "&") al1 += !al1 ? "-1" : (al1.endsWith("/") || al1.endsWith("*")) ? "-1" : "-1";
+                            else if (i === "@") al1 += "*";
+                            else if (i === "!") al1 += "/";
+                            else if (i === "^") al1 += "+";
+                            else if (i === "#") al1 += "-";
+                        }
+                        output += `${cn(al1.slice(1))}${end}`;
+                    }
+                } else if (line.startsWith("네르~")) {
+                    end = "";
+                } else if (line.startsWith("당떨어져서그래~")) {
+                    let ins = line.slice(7);
+                    if (ins.includes("ㅋ")) {
+                        let hcount2 = (ins.match(/ㅋ/g) || []).length;
+                        output += String.fromCharCode(val[hcount2]) + end;
+                    } else {
+                        let al1 = "";
+                        for (let i of ins) {
+                            if (i === "*") al1 += !al1 ? "+1" : (al1.endsWith("/") || al1.endsWith("*")) ? "1" : "+1";
+                            else if (i === "&") al1 += !al1 ? "-1" : (al1.endsWith("/") || al1.endsWith("*")) ? "-1" : "-1";
+                            else if (i === "@") al1 += "*";
+                            else if (i === "!") al1 += "/";
+                        }
+                        output += String.fromCharCode(cn(al1.slice(1))) + end;
+                    }
+                }
+            }
+
+            document.getElementById("output").innerText = output || "출력 없음";
+        }
+    </script>
+</body>
+</html>
